@@ -1,0 +1,55 @@
+optimizer:
+    mesh_space: 250
+    expand_region: false
+    wrinkle_feather: 100
+    inregion_soften: false
+    mass_power: 0.25
+    stiff_power: 2
+    smooth_fun: gaussian
+    cross_region_multiplier: 1
+    shared_M0: false
+    rigid_first: true
+    optimize_angle: false
+    Nrigid: 5
+    Naffine: 500
+    Nshared: 0
+    Nelastic: 1000
+    Nsoft: 5
+    lr_scl: 5
+    milestone: 5
+    maximum_gain: 4
+    func: elastic_mesh.BGD
+    params:
+        print_time: false
+        max_iter: 1000
+        learning_rate: 0.02
+        momentum: 0.5
+        momentum_diminish: 0.1
+        min_learn_rate: 5e-2
+        smooth_gradient: false
+        smooth_start_knsz: 1
+        smooth_knsz_diminish: 0.75
+        smooth_end_kernel_sz: 0.3
+        distance_decay_power: 0.5
+        intra_section:
+            func: elastic_mesh.rigidity_huber
+            params:
+                multiplier: 0.25
+                huber_len: 50
+                min_stiff: 0
+                compression_gain: 1
+        cross_section:
+            func: elastic_mesh.crosslink_huber
+            params:
+                multiplier: 1
+                huber_len: 200
+
+render:
+    block_size: 256
+    mesh_size: 50
+    outmask_power: 1
+    inmask_feather: 150
+    inoutmask_ratio: 10000
+    prevent_identical: true
+    glue_width: 50
+    max_wrinke_width: 300

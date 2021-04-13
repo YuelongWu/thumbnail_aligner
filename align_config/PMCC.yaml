@@ -1,0 +1,52 @@
+preprocessing:              # pre processing configs
+    func: PMCC.pre_inverse_log
+    params:
+        max_val: 255        # maximum
+        thresh: 0.1         # relative threshold
+        feather: 25         # feather width
+        feather_small: 15   # smaller feather width
+        dilatesz: 0
+        medfiltsz: 1
+        roi_thresh: [0, inf]
+        roi_erode: 1
+        img_power: 2
+        sigma: 5    # sigma for LoG filter
+
+detector:
+    func: PMCC.detect_regular_grid
+    # func: PMCC.detect_locmax_cbdis
+    params:
+        nfeature: [5000, 1000]
+        min_dis: [50, 300]
+        nb_size: [251, 361]
+        fft: [false, true]
+        thresh: 0.05
+        nfeatsubmin: 0.15    # minimum number of features in each subregion
+        nfeatsubgain: 1.25
+
+matcher:
+    func: PMCC.block_match
+    params:
+        rot_thresh: 5  # indegree
+        search_range: 250
+        mask_disk: 20
+        min_conf: 0.2
+
+filters:
+    apply_limit: true
+    rotation_limit: 180
+    shear_limit: 0.35
+    displc_limit: 100000
+    filter1:
+        func: geometries.filter_global_ransac
+        params:
+            max_iter: 1000
+            dis_tol: 50       # distance considered as inliner
+            match_exit_num: 50  # number of matches to exit
+            match_exit_ratio: 0.85
+    filter3:
+        func: geometries.filter_2d_tree_affine
+        params:
+            leafsize: 40
+            dimrange: 500
+            dis_tol: 20

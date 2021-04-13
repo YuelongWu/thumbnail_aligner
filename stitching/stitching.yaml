@@ -1,0 +1,234 @@
+min_overlap: 0
+scale: 1
+mask_gen:
+    margin: 1
+    whisker: 150
+
+# prematch:
+    # func: subregion_matching
+    # params:
+    #     preprocessing:              # pre processing configs
+    #         func: local_radon.pre_inverse_thresh
+    #         params:
+    #             max_val: 255        # maximum
+    #             thresh: 0.1         # relative threshold
+    #             feather: 10         # feather width
+    #             feather_small: 5
+    #             dilatesz: 0
+    #             medfiltsz: 1
+    #             roi_thresh: [0, inf]
+    #             roi_erode: 1
+
+    #     detector:                   # detector configs
+    #         func: local_radon.detect_log_blobs
+    #         params:
+    #             nfeatures: 5000     # maximum number of features
+    #             sigma: 4            # sigma of LoG filter
+    #             min_dis: 20         # minimum distance between keypoints
+    #             thresh: 0.05         # minimum threshold wrt the highest peak
+    #             medfiltsz: 3        # size of median filter
+    #             imgpower: 1.0      # power used in preprocessing
+    #             nfeatsubmin: 0.2    # minimum number of features in each subregion
+    #             nfeatsubgain: 1.25
+
+    #     descriptor:
+    #         func: local_radon.descriptor_local_radon
+    #         params:
+    #             proj_num: 12
+    #             beam_num: 16
+    #             beam_wd: 5
+    #             eccentric: true
+    #             filter_blur: 1
+    #             beam_radius: 40
+    #             regularize_orientaion: true
+    #             orientation_func: local_radon.orient_2nd_moment
+
+    #     matcher:
+    #         func: local_radon.descriptor_compare_subregion
+    #         params:
+    #             orientation_func: local_radon.orient_2nd_moment
+    #             compare_method: fast    # fast or bf (brute_force)
+    #             compare_dim: 1          # 0-twoway 1-smaller 2-larger
+    #             min_corr: 0.5           # minimum correlation between descriptors
+    #             expand_whisker: 400            # maximum distance tolerance for refined matching
+    #             search_whisker: 400
+
+    #     filters:
+    #         filter1:
+    #             func: geometries.filter_pw_strain
+    #             params:
+    #                 strain_limit: 0.1
+    #                 displc_limit: 10000
+    #                 shear_limit: 30     # in degree
+    #                 thresh: 0.5
+    #                 d_whisker:  100
+    #                 filter_angle: true
+
+    #         filter2:
+    #             func: geometries.filter_global_ransac
+    #             params:
+    #                 max_iter: 10000
+    #                 dis_tol: 15        # distance considered as inliner
+    #                 match_exit_num: 100  # number of matches to exit
+    #                 match_exit_ratio: 0.85
+
+prematch:
+    func: global_xcorr_matching
+    min_conf: 0.4
+    params:
+        preprocessing:              # pre processing configs
+            func: PMCC.pre_inverse_log
+            params:
+                max_val: 255        # maximum
+                thresh: 0.1         # relative threshold
+                feather: 5         # feather width
+                feather_small: 5   # smaller feather width
+                dilatesz: 0
+                medfiltsz: 1
+                roi_thresh: [0, inf]
+                roi_erode: 1
+                img_power: 1
+                sigma: 5    # sigma for LoG filter
+
+        matcher:
+            mask_disk: 150
+            dis_thresh: 500
+            apply_mask: false
+            double_pad: false
+
+finematch:
+    func: PMCC_matching_iter
+    params:
+        preprocessing:              # pre processing configs
+            # func: PMCC.pre_inverse_log
+            func: PMCC.pre_inverse_log
+            params:
+                max_val: 255        # maximum
+                thresh: 0.05         # relative threshold
+                feather: 10         # feather width
+                feather_small: 5   # smaller feather width
+                dilatesz: 0
+                medfiltsz: 3
+                roi_thresh: [0, inf]
+                roi_erode: 1
+                img_power: 1
+                sigma: 3    # sigma for LoG filter
+
+        detector:
+            func: PMCC.detect_regular_grid
+            # func: PMCC.detect_locmax_cbdis
+            params:
+                nfeature: [5000, 1000]
+                min_dis: [300, 50]
+                nb_size: [300, 50]
+                fft: true
+                thresh: 0.01
+                nfeatsubmin: 0.15    # minimum number of features in each subregion
+                nfeatsubgain: 1.25
+                pad_des: 2
+            # func: PMCC.detect_cart_block
+            # params:
+            #     nb_size: [300, 150, 50]
+            #     fft: true
+
+        matcher:
+            dis_thresh: 0.3
+            mask_disk: 0.2
+            apply_mask: true
+            min_conf: 0.4
+            gridsz: 1
+
+        filters:
+            apply_limit: true
+            rotation_limit: 180
+            shear_limit: 0.35
+            displc_limit: 100000
+            filter1:
+                func: geometries.filter_global_ransac
+                params:
+                    max_iter: 1000
+                    dis_tol: 150       # distance considered as inliner
+                    match_exit_num: 50  # number of matches to exit
+                    match_exit_ratio: 0.85
+            filter3:
+                func: geometries.filter_2d_tree_affine
+                params:
+                    leafsize: 40
+                    dimrange: 200
+                    dis_tol: 10
+
+        final_filters:
+            apply_limit: false
+            rotation_limit: 180
+            shear_limit: 1
+            displc_limit: 10000000
+            filter1:
+                func: geometries.filter_fit_surface
+                params:
+                    dis_tol: 10
+            # filter2:
+            #     func: geometries.filter_iter_outlier
+            #     params:
+            #         outlier_thresh: 5
+            #         max_delete: 10
+            #         delete_batch: 3
+            #         min_remain: 5
+            #         upper_shoulder: 20
+
+
+
+optimizer:
+    ext: .tif
+    share_M0: true
+    rigid_first: true
+    optimize_angle: false
+    mesh_space: 150
+    expand_region: false
+    wrinkle_feather: 10
+    inregion_soften: false
+    mass_power: 0.25
+    stiff_power: 2
+    smooth_fun: gaussian
+    cross_region_multiplier: 1
+    Nrigid: 2
+    Naffine: 0
+    Nshared: 500
+    Nelastic: 2500
+    lr_scl: 5
+    milestone: 5
+    maximum_gain: 3
+    func: elastic_mesh.BGD
+    params:
+        print_time: false
+        max_iter: 1000
+        learning_rate: 0.04
+        momentum: 0.5
+        momentum_diminish: 0.1
+        min_learn_rate: 5e-2
+        smooth_gradient: false
+        smooth_start_knsz: 1
+        smooth_knsz_diminish: 0.75
+        smooth_end_kernel_sz: 0.3
+        distance_decay_power: 0
+        intra_section:
+            func: elastic_mesh.rigidity_huber
+            params:
+                multiplier: 0.5
+                huber_len: 50
+                min_stiff: 0
+                compression_gain: 2
+        cross_section:
+            func: elastic_mesh.crosslink_huber
+            params:
+                multiplier: 1
+                huber_len: 200
+
+render:
+    rotate_image: false
+    block_size: 4096
+    mesh_size: 50
+    blend_range: 1000
+    weight_power: 2
+    blend_method: mean
+    interp: linear
+    fillval: 255

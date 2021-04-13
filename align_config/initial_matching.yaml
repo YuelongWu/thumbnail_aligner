@@ -1,0 +1,114 @@
+# mask_gen:
+#     func: mask_gen.mask_wrinkle
+#     params:                     # wrinkle detection configs
+#         wrk_thresh: [0, 50]     # grayvalue range considered wrinkles
+#         wrk_width: 10           # minimal width to be considered as a wrinkle
+#         wrk_minlen: 100         # minimal length to be considered as a wrinkle
+#         wrk_ratio: 5            # minimal length/width ratio to be considered as a wrinkle
+#         roi_thresh: [0, inf]    # lower/upper threshold to be defined as ROI
+#         roi_erode: 1            # radius of the erosion disk applied on the ROI mask
+#         multicolor: false
+
+preprocessing:              # pre processing configs
+    func: local_radon.pre_inverse_thresh
+    params:
+        max_val: 255        # maximum
+        thresh: 0.1         # relative threshold
+        feather: 50         # feather width
+        dilatesz: 0
+        medfiltsz: 1
+        roi_thresh: [0, inf]
+        roi_erode: 1
+
+# preprocessing:              # pre processing configs
+#     func: local_radon.pre_imreconstruct
+#     params:
+#         thresh: 0.1         # relative threshold
+#         feather: 20         # feather width
+#         dilatesz: 1
+#         medfiltsz: 3
+#         roi_thresh: [-1, 255]
+#         roi_erode: 1
+
+# preprocessing:              # pre processing configs
+#     func: local_radon.pre_inverse_clearborder
+#     params:
+#         max_val: 255        # maximum
+#         thresh: 0.1         # relative threshold
+#         feather: 50         # feather width
+#         dilatesz: 0
+#         medfiltsz: 3
+#         roi_thresh: [0, inf]
+#         roi_erode: 1
+#         erodesz: 5
+
+
+detector:                   # detector configs
+    func: local_radon.detect_log_blobs
+    params:
+        nfeatures: 5000     # maximum number of features
+        sigma: 2            # sigma of LoG filter
+        min_dis: 10         # minimum distance between keypoints
+        thresh: 0.05         # minimum threshold wrt the highest peak
+        medfiltsz: 3        # size of median filter
+        imgpower: 1.0      # power used in preprocessing
+        nfeatsubmin: 0.2    # minimum number of features in each subregion
+        nfeatsubgain: 1.25
+
+descriptor:
+    func: local_radon.descriptor_local_radon
+    params:
+        proj_num: 12
+        beam_num: 16
+        beam_wd: 3
+        eccentric: true
+        filter_blur: 1
+        beam_radius: 40
+        regularize_orientaion: true
+        orientation_func: local_radon.orient_2nd_moment
+
+matcher:
+    func: local_radon.descriptor_compare_global
+    params:
+        orientation_func: local_radon.orient_2nd_moment
+        compare_method: fast    # fast or bf (brute_force)
+        compare_dim: 1          # 0-twoway 1-smaller 2-larger
+        min_corr: 0.5           # minimum correlation between descriptors
+        refine_max_dis: 10            # maximum distance tolerance for refined matching
+
+filters:
+    filter1:
+        func: geometries.filter_pw_strain
+        params:
+            strain_limit: 0.1
+            displc_limit: 50
+            shear_limit: 30     # in degree
+            thresh: 0.5
+            d_whisker:  100
+            filter_angle: true
+
+    filter3:
+        func: geometries.filter_global_ransac
+        params:
+            max_iter: 10000
+            dis_tol: 5        # distance considered as inliner
+            match_exit_num: 100  # number of matches to exit
+            match_exit_ratio: 0.85
+
+final_filters:
+    apply_limit: false
+    rotation_limit: 180
+    shear_limit: 1
+    displc_limit: 10000000
+    # filter1:
+    #     func: geometries.filter_iter_outlier
+    #     params:
+    #         outlier_thresh: 5
+    #         max_delete: 10
+    #         delete_batch: 3
+    #         min_remain: 5
+    #         upper_shoulder: 20
+    filter2:
+        func: geometries.filter_fit_surface
+        params:
+            dis_tol: 3

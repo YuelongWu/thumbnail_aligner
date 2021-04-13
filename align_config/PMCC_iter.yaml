@@ -1,0 +1,102 @@
+preprocessing:              # pre processing configs
+    # func: PMCC.pre_imclearborder_log
+    func: PMCC.pre_inverse_log
+    # func: PMCC.pre_inverse_whiten
+    # func: PMCC.pre_log
+    params:
+        max_val: 255        # maximum
+        thresh: 0.005         # relative threshold
+        feather: 25         # feather width
+        feather_small: 15   # smaller feather width
+        dilatesz: 0
+        medfiltsz: 1
+        roi_thresh: [0, inf]
+        roi_erode: 10
+        img_power: 1
+        sigma: 1.5    # sigma for LoG filter
+
+# preprocessing:              # pre processing configs
+#     func: PMCC.pre_inverse_imclearborder_log
+#     # func: PMCC.pre_inverse_log
+#     # func: PMCC.pre_log
+#     params:
+#         max_val: 255        # maximum
+#         thresh: 0.01         # relative threshold
+#         feather: 15         # feather width
+#         feather_small: 15   # smaller feather width
+#         dilatesz: 0
+#         medfiltsz: 1
+#         roi_thresh: [0, inf]
+#         roi_erode: 1
+#         img_power: 1
+#         sigma: 5    # sigma for LoG filter
+#         erodesz: 5
+
+
+detector:
+    func: PMCC.detect_regular_grid
+    # func: PMCC.detect_locmax_cbdis
+    params:
+        nfeature: [5000, 1000]
+        min_dis: [500, 300, 100]
+        nb_size: [500, 300, 100]
+        fft: true
+        thresh: 0.01
+        nfeatsubmin: 0.15    # minimum number of features in each subregion
+        nfeatsubgain: 1.25
+        pad_des: true
+    # func: PMCC.detect_cart_block
+    # params:
+    #     nb_size: [1000, 500, 250, 50]
+    #     fft: true
+
+matcher:
+    dis_thresh: 0.5
+    mask_disk: 0.1
+    apply_mask: false
+    min_conf: 0.35
+    gridsz: 0.5
+
+filters:
+    apply_limit: true
+    rotation_limit: 180
+    shear_limit: 0.35
+    displc_limit: 100000
+    filter1:
+        func: geometries.filter_global_ransac
+        params:
+            max_iter: 1000
+            dis_tol: 50       # distance considered as inliner
+            match_exit_num: 50  # number of matches to exit
+            match_exit_ratio: 0.85
+    filter2:
+        func: geometries.filter_2d_tree_affine
+        params:
+            leafsize: 15
+            dimrange: 100
+            dis_tol: 0.2
+    filter3:
+        func: geometries.filter_2d_tree_affine
+        params:
+            leafsize: 15
+            dimrange: 50
+            dis_tol: 0.1
+
+final_filters:
+    apply_limit: false
+    rotation_limit: 180
+    shear_limit: 1
+    displc_limit: 10000000
+    # filter1:
+    #     func: geometries.filter_iter_outlier
+    #     params:
+    #         outlier_thresh: 5
+    #         max_delete: 10
+    #         delete_batch: 3
+    #         min_remain: 5
+    #         upper_shoulder: 20
+    filter2:
+        func: geometries.filter_fit_surface
+        params:
+            dis_tol: 10
+

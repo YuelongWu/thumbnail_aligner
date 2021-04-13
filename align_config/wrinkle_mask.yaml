@@ -1,0 +1,13 @@
+wrk_thresh: [-1, 50]     # grayvalue range considered wrinkles
+wrk_width: 3           # minimal width to be considered as a wrinkle
+wrk_minlen: 100         # minimal length to be considered as a wrinkle
+wrk_ratio: 30            # minimal length/width ratio to be considered as a wrinkle
+roi_thresh: [0, inf]    # lower/upper threshold to be defined as ROI
+roi_erode: 1            # radius of the erosion disk applied on the ROI mask
+multicolor: true
+
+# for partition region
+multiplier: 3
+minhalflen: 2
+dyxcutoff: 5
+angle_thresh: 45
